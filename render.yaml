@@ -21,7 +21,7 @@ services:
     region: oregon
     branch: main
     autoDeploy: true
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: node scripts/start-production.js
     disk:
       name: vertex-data
