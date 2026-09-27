@@ -1,0 +1,33 @@
+{
+  "type": "web_service",
+  "name": "vertex-outreach",
+  "ownerId": "tea-dasej80473hc73fv4vng",
+  "repo": "https://github.com/denisbraguin45-jpg/-vertex-outreach",
+  "branch": "main",
+  "autoDeploy": "yes",
+  "healthCheckPath": "/api/status",
+  "serviceDetails": {
+    "runtime": "node",
+    "region": "oregon",
+    "plan": "free",
+    "healthCheckPath": "/api/status",
+    "envSpecificDetails": {
+      "buildCommand": "npm ci && npm run build",
+      "startCommand": "node scripts/start-production.js"
+    }
+  },
+  "envVars": [
+    { "key": "NODE_ENV", "value": "production" },
+    { "key": "NODE_VERSION", "value": "24" },
+    { "key": "DATABASE_URL", "value": "/tmp/data/outreach.db" },
+    { "key": "DATA_DIR", "value": "/tmp/data" },
+    { "key": "OUTREACH_DRY_RUN", "value": "true" },
+    { "key": "OPENAI_MONTHLY_BUDGET_USD", "value": "20" },
+    { "key": "OPENAI_MODEL", "value": "gpt-4.1-mini" },
+    { "key": "OPENAI_MODEL_FAST", "value": "gpt-4.1-nano" },
+    { "key": "MAX_DMS_PER_DAY", "value": "30" },
+    { "key": "OPERATING_HOURS", "value": "09:00-20:00" },
+    { "key": "OPERATING_TIMEZONE", "value": "America/Sao_Paulo" },
+    { "key": "OUTREACH_AI_SIMULATE_API", "value": "true" }
+  ]
+}

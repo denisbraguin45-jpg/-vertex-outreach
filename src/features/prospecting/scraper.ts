@@ -166,7 +166,10 @@ export interface OsmPlace {
 const OVERPASS_ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.private.coffee/interpreter",
   "https://overpass.private.coffee/api/interpreter",
+  "https://overpass.osm.jp/api/interpreter",
+  "https://overpass.osm.ch/api/interpreter",
 ];
 const OVERPASS_UA = "VertexOutreach/0.1 (prospeccao multicanal)";
 
@@ -191,25 +194,29 @@ async function runOverpassQuery(query: string, timeoutMs = 60_000): Promise<Over
   await throttleOverpass();
   let lastError: Error | null = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": OVERPASS_UA },
-        body: `data=${encodeURIComponent(query)}`,
-        signal: AbortSignal.timeout(timeoutMs),
-      });
-      if (res.status === 429 || res.status === 504 || res.status === 502 || res.status === 503) {
-        lastError = new Error(`Overpass HTTP ${res.status} em ${endpoint}`);
-        continue;
+    // 1 tentativa + 1 retry com backoff por endpoint (429/504 são transitórios)
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 12_000));
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": OVERPASS_UA },
+          body: `data=${encodeURIComponent(query)}`,
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+        if (res.status === 429 || res.status === 504 || res.status === 502 || res.status === 503) {
+          lastError = new Error(`Overpass HTTP ${res.status} em ${endpoint}`);
+          continue; // retry mesmo endpoint
+        }
+        if (!res.ok) {
+          lastError = new Error(`Overpass HTTP ${res.status} em ${endpoint}`);
+          break; // 4xx definitivo: próximo endpoint
+        }
+        const data = (await res.json()) as { elements?: OverpassElement[] };
+        return data.elements ?? [];
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
       }
-      if (!res.ok) {
-        lastError = new Error(`Overpass HTTP ${res.status} em ${endpoint}`);
-        continue;
-      }
-      const data = (await res.json()) as { elements?: OverpassElement[] };
-      return data.elements ?? [];
-    } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err));
     }
   }
   throw lastError ?? new Error("Overpass indisponível (todos os endpoints falharam)");
