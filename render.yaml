@@ -71,3 +71,7 @@ services:
         value: America/Sao_Paulo
       - key: OUTREACH_AI_SIMULATE_API
         value: "true"
+
+# ═══════════════════════════════════════════════════════════════════════
+# FORCE DEPLOY 2026-09-27 — rebuild to apply: 6585f3c (geocoder fallback Open-Meteo) + 69fcb81 (build fix)
+# ═══════════════════════════════════════════════════════════════════════
