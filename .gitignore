@@ -26,3 +26,18 @@ next-env.d.ts
 # logs locais
 deploy.log
 smoke-test.log
+
+# temporarios de deploy/api
+*.json.tmp
+owners.json
+svc-resp.json
+svc-full.json
+patch-*.json
+deploy*.json
+d*.json
+logs*.json
+service_id.txt
+url.txt
+cs.json
+oa.json
+openapi*.json
