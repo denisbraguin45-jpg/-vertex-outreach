@@ -1,0 +1,28 @@
+node_modules/
+.next/
+out/
+
+# secrets — never commit
+.env
+.env.local
+config/business.json
+
+# browser session (logged-in state — never commit)
+.chrome-profile/
+*.db
+*.db-shm
+*.db-wal
+
+# runtime artifacts
+data/
+backups/
+screenshots/
+traces/
+logs/
+
+*.tsbuildinfo
+next-env.d.ts
+
+# logs locais
+deploy.log
+smoke-test.log

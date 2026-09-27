@@ -1,0 +1,73 @@
+# ─── Vertex Outreach · Deploy no Render (Blueprint) ──────────────────────────
+# Serviço ÚNICO: o painel Next.js e o worker compartilham o mesmo SQLite
+# (WAL), por isso PRECISAM do mesmo disco persistente — executados como
+# processos irmãos no mesmo container pelo startCommand.
+#
+# Disco persistente (1 GB) montado em /data:
+#   - SQLite (leads, prospects, deals, delivery, referrals, expansion, spend)
+#   - evidências do navegador (screenshots/) — valem para auditoria
+#
+# Compliance:
+#   - OUTREACH_DRY_RUN=true por padrão (nada é enviado até o operador trocar)
+#   - A troca para false é feita no dashboard do Render, nunca no código
+#
+# Node 24 LTS — exigido pelo node:sqlite (experimental, estável no 24)
+
+services:
+  - type: web
+    name: vertex-outreach
+    runtime: node
+    plan: starter
+    region: oregon
+    branch: main
+    autoDeploy: true
+    buildCommand: npm ci && npm run build
+    startCommand: node scripts/start-production.js
+    disk:
+      name: vertex-data
+      mountPath: /data
+      sizeGB: 1
+    healthCheckPath: /api/status
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24"
+      - key: DATABASE_URL
+        value: /data/outreach.db
+      # ── Segurança por padrão: DRY-RUN ligado ──────────────────────────────
+      - key: OUTREACH_DRY_RUN
+        value: "true"
+      # ── IA: começa desligada (heurística determinística). Ativar no painel
+      #    do Render colando a key — nunca commitar no repositório. ──────────
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: LLM_BASE_URL
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: OPENAI_MODEL_FAST
+        value: gpt-4.1-nano
+      - key: OPENAI_MONTHLY_BUDGET_USD
+        value: "20"
+      # ── Instagram oficial (opcional; webhook só valida se configurado) ───
+      - key: INSTAGRAM_APP_SECRET
+        sync: false
+      - key: INSTAGRAM_PAGE_ACCESS_TOKEN
+        sync: false
+      - key: INSTAGRAM_WEBHOOK_VERIFY_TOKEN
+        sync: false
+      - key: INSTAGRAM_BUSINESS_ACCOUNT_ID
+        sync: false
+      # ── Navegador: sem Chrome no Render → provider simulado assume ───────
+      - key: CHROME_CDP_URL
+        value: http://127.0.0.1:9222
+      # ── Ritmo ─────────────────────────────────────────────────────────────
+      - key: MAX_DMS_PER_DAY
+        value: "30"
+      - key: OPERATING_HOURS
+        value: 09:00-20:00
+      - key: OPERATING_TIMEZONE
+        value: America/Sao_Paulo
+      - key: OUTREACH_AI_SIMULATE_API
+        value: "true"

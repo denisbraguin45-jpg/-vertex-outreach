@@ -1,0 +1,39 @@
+{
+  "$comment": "Copy to config/business.json (gitignored) and fill the placeholders. VERIFIED_CLAIMS is the ONLY source of commercial statements the AI may send. UNVERIFIED_CLAIMS are hard-blocked until promoted with proof.",
+  "owner": {
+    "name": "{{Denis}}",
+    "role": "{{CEO}}"
+  },
+  "company": {
+    "name": "{{Vertex}}",
+    "website": "{{https://vertextarget.vercel.app/}}",
+    "instagram": "{{https://www.instagram.com/denis.braghin/}}",
+    "oneLinePitch": "{{Trazemos experiencia atráves de Comunicação Digital}}",
+    "revenueModel": "{{Site e Saas}}",
+    "howItWorks": ["{{passo 1}}", "{{passo 2}}", "{{passo 3}}"],
+    "marketJargon": "{{Experiencia}}"
+  },
+  "channels": {
+    "whatsappLink": "{{https://wa.me/5511952360523}}",
+    "affiliateGroupLink": "{{link do grupo de afiliados}}"
+  },
+  "icp": {
+    "segments": ["{{Carros de luxo}}", "{{Jetski}}", "{{Imobiliarias de Luxo}}"],
+    "keywords": ["{{Carros}}", "{{Jetski}}", "{{Imobiliarias de Luxo}}"],
+    "geography": "{{Brasil}}"
+  },
+  "affiliates": {
+    "topics": ["{{Imports}}", "{{Luxo}}"],
+    "scoringNotes": "priorize engajamento real e compatibilidade de audiência; otimize para afiliado que gera cliente ativo, não para entrada no grupo"
+  },
+  "claims": {
+    "verified": [
+      "{{afirmação comprovada 1 — ex: portfólio público em vertextarget.vercel.app}}",
+      "{{afirmação comprovada 2}}"
+    ],
+    "unverified": [
+      "{{afirmação a comprovar 1 — BLOQUEADA até virar prova}}",
+      "{{afirmação a comprovar 2}}"
+    ]
+  }
+}
