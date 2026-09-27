@@ -31,25 +31,62 @@ export async function geocodeCity(city: string, state?: string): Promise<GeoResu
   const key = `city|${city}|${state ?? ""}`.toLowerCase();
   const hit = geoCache.get(key);
   if (hit && Date.now() - hit.at < GEO_TTL) return hit.value;
-  await throttleGeo();
-  const query = state ? `${city}, ${state}, Brasil` : `${city}, Brasil`;
-  const url = `${NOMINATIM_BASE}/search?q=${encodeURIComponent(query)}&format=jsonv2&limit=1&countrycodes=br`;
-  const res = await fetch(url, {
-    headers: { "User-Agent": NOMINATIM_UA, "Accept-Language": "pt-BR,pt;q=0.9" },
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!res.ok) throw new Error(`Nominatim HTTP ${res.status}`);
-  const data = (await res.json()) as Array<{ name: string; display_name: string; lat: string; lon: string; boundingbox: string[] }>;
-  const first = data[0] ?? null;
-  const value: GeoResult | null = first
-    ? {
-        name: first.name || city,
-        state: state ?? (first.display_name.split(",")[1] ?? "").trim(),
-        lat: parseFloat(first.lat),
-        lon: parseFloat(first.lon),
-        bbox: first.boundingbox.map(Number) as [number, number, number, number],
+
+  // 1) Nominatim (bbox preciso) — bloqueia IPs de datacenter com 429
+  let value: GeoResult | null = null;
+  try {
+    await throttleGeo();
+    const query = state ? `${city}, ${state}, Brasil` : `${city}, Brasil`;
+    const url = `${NOMINATIM_BASE}/search?q=${encodeURIComponent(query)}&format=jsonv2&limit=1&countrycodes=br`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": NOMINATIM_UA, "Accept-Language": "pt-BR,pt;q=0.9" },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (res.ok) {
+      const data = (await res.json()) as Array<{ name: string; display_name: string; lat: string; lon: string; boundingbox: string[] }>;
+      const first = data[0] ?? null;
+      value = first
+        ? {
+            name: first.name || city,
+            state: state ?? (first.display_name.split(",")[1] ?? "").trim(),
+            lat: parseFloat(first.lat),
+            lon: parseFloat(first.lon),
+            bbox: first.boundingbox.map(Number) as [number, number, number, number],
+          }
+        : null;
+    } else if (res.status !== 429 && res.status !== 403) {
+      throw new Error(`Nominatim HTTP ${res.status}`);
+    }
+  } catch {
+    // cai para o fallback abaixo
+  }
+
+  // 2) Fallback Open-Meteo geocoding (grátis, tolerante a datacenters)
+  if (!value) {
+    try {
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=pt&format=json&countryCode=BR`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          results?: Array<{ name: string; latitude: number; longitude: number; admin1?: string }>;
+        };
+        const r = data.results?.[0];
+        if (r) {
+          // bbox sintético ±0.35° (~38km) — mesmo raio usado quando o bbox vem estreito
+          value = {
+            name: r.name,
+            state: state ?? r.admin1 ?? "",
+            lat: r.latitude,
+            lon: r.longitude,
+            bbox: [r.latitude - 0.35, r.latitude + 0.35, r.longitude - 0.35, r.longitude + 0.35],
+          };
+        }
       }
-    : null;
+    } catch {
+      // segue com value=null
+    }
+  }
+
   geoCache.set(key, { at: Date.now(), value });
   return value;
 }
